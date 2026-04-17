@@ -4,25 +4,89 @@ import pandas as pd
 # Cấu hình trang
 st.set_page_config(page_title="Khảo sát iRAP - UTC", layout="wide")
 
-# --- PHẦN CHÈN HÌNH ẢNH / LOGO ---
-# Bạn có thể thay link ảnh dưới đây bằng link ảnh thực tế của Khoa hoặc Trường
-col_logo1, col_logo2 = st.columns([1, 5])
+# --- PHẦN HIỂN THỊ LOGO VÀ TÊN KHOA ---
+# Sử dụng link logo chuẩn của UTC
+logo_url = "https://utc.edu.vn/logo.png" 
 
-with col_logo1:
-    # Chèn logo trường hoặc khoa (đây là ví dụ link ảnh)
-    st.image("https://utc.edu.vn/logo.png", width=120) 
+col_l1, col_l2 = st.columns([1, 6])
 
-with col_logo2:
-    st.markdown("### ĐẠI HỌC GIAO THÔNG VẬN TẢI")
-    st.markdown("#### KHOA CÔNG TRÌNH - BỘ MÔN ĐƯỜNG BỘ")
-    st.write("---")
+with col_l1:
+    # Nếu link trên vẫn lỗi, Streamlit sẽ bỏ qua không hiện dấu X
+    st.image(logo_url, width=100)
 
-# Khởi tạo bộ nhớ tạm
+with col_l2:
+    st.subheader("TRƯỜNG ĐẠI HỌC GIAO THÔNG VẬN TẢI")
+    st.markdown("### KHOA CÔNG TRÌNH - BỘ MÔN ĐƯỜNG BỘ")
+
+st.write("---")
+
+# Khởi tạo bộ nhớ tạm để lưu dữ liệu
 if 'data_store' not in st.session_state:
     st.session_state.data_store = []
 
 st.title("📊 Phiếu Khảo sát Đánh giá An toàn Tuyến đường")
 st.info("💡 Đồ án nghiên cứu ứng dụng tiêu chuẩn iRAP trong đánh giá an toàn giao thông.")
 
-# --- TIẾP TỤC CÁC PHẦN CODE KHẢO SÁT NHƯ TRƯỚC ---
-# (Phần danh sách 10 tiêu chí và Form nhập liệu giữ nguyên như bản trước)
+# --- 10 TIÊU CHÍ ĐÁNH GIÁ (BẢN CHUẨN) ---
+criteria = {
+    "1. Bề mặt đường": "Đường có bằng phẳng không? Có ổ gà không?",
+    "2. Vạch kẻ đường": "Vạch sơn chia làn, vạch đi bộ có rõ nét không?",
+    "3. Biển báo": "Biển báo có đặt đúng chỗ và dễ thấy không?",
+    "4. Đèn chiếu sáng": "Ban đêm đèn đường có đủ sáng không?",
+    "5. Dải phân cách": "Ngăn cách giữa hai chiều có an toàn không?",
+    "6. Vỉa hè": "Vỉa hè có rộng, không bị lấn chiếm không?",
+    "7. Xe máy": "Xe máy có làn riêng hay đi hỗn hợp nguy hiểm?",
+    "8. Điểm giao cắt": "Các lối ra vào ngõ có tầm nhìn thoáng không?",
+    "9. Thoát nước": "Trời mưa đường có bị ngập úng không?",
+    "10. Cảm giác an toàn": "Bạn có yên tâm khi đi qua đoạn đường này không?"
+}
+
+star_options = ["1 ⭐ (Rất rủi ro)", "2 ⭐", "3 ⭐ (Trung bình)", "4 ⭐", "5 ⭐ (Rất an toàn)"]
+
+# Form nhập liệu
+with st.form("survey_form"):
+    user_name = st.text_input("Họ tên người khảo sát:", placeholder="Nhập tên của bạn...")
+    
+    st.write("---")
+    col1, col2, col3 = st.columns(3)
+
+    def render_survey(header, key_p):
+        st.markdown(f"### {header}")
+        for name, desc in criteria.items():
+            st.write(f"**{name}**")
+            st.select_slider(desc, options=["Kém", "Tạm được", "Tốt"], key=f"{key_p}_{name}", value="Tạm được")
+        
+        st.write("---")
+        stars = st.select_slider(f"Xếp hạng sao cho {header}:", options=star_options, key=f"{key_p}_s", value="3 ⭐ (Trung bình)")
+        return stars
+
+    with col1: s_kl = render_survey("Hầm Kim Liên", "kl")
+    with col2: s_gp = render_survey("Đường Giải Phóng", "gp")
+    with col3: s_ql = render_survey("QL 1A cũ", "ql")
+
+    st.write("---")
+    submitted = st.form_submit_button("GỬI ĐÁNH GIÁ CỦA BẠN")
+
+if submitted:
+    st.session_state.data_store.append({
+        "Người đánh giá": user_name,
+        "Hầm Kim Liên": s_kl,
+        "Đường Giải Phóng": s_gp,
+        "QL 1A cũ": s_ql
+    })
+    st.balloons()
+    st.success("Cảm ơn bạn! Đã ghi lại kết quả khảo sát.")
+
+# --- PHẦN TỔNG HỢP DỮ LIỆU ---
+st.write("---")
+show_admin = st.checkbox("🔍 Hiển thị bảng tổng hợp dữ liệu (Dành cho báo cáo)")
+if show_admin:
+    if st.session_state.data_store:
+        df = pd.DataFrame(st.session_state.data_store)
+        st.dataframe(df, use_container_width=True)
+        
+        # Nút tải file Excel
+        csv = df.to_csv(index=False).encode('utf-8-sig')
+        st.download_button("📥 Tải kết quả về file Excel (.csv)", data=csv, file_name="tong_hop_khao_sat_irap.csv", mime="text/csv")
+    else:
+        st.warning("Chưa có dữ liệu nào được gửi.")
