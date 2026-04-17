@@ -12,16 +12,17 @@ Vui lòng đánh giá chi tiết các thuộc tính đường để tính toán 
 
 # --- DANH SÁCH TIÊU CHÍ CHI TIẾT THEO CHUẨN IRAP ---
 criteria = {
-    "Loại dải phân cách": "Có dải phân cách cứng, vạch sơn hay để trống? (Phòng va chạm đối đầu)",
-    "Lề đường bên phải": "Chiều rộng lề đường và vật thể cố định bên lề (Cột điện, cây cây...)",
-    "Điểm giao cắt": "Tần suất các điểm giao cắt, lối ra vào nhà dân, đường nhánh?",
-    "Chất lượng mặt đường": "Độ gồ ghề và sức kháng trượt (Ảnh hưởng đến quãng đường phanh)",
-    "Vạch kẻ & Biển báo": "Sự hiện diện của vạch tim đường, vạch lề đường và biển báo tốc độ",
-    "Tiện ích đi bộ": "Sự hiện diện của vỉa hè và các vị trí sang đường an toàn",
-    "Phân làn xe máy": "Xe máy có làn riêng hay đi hỗn hợp với ô tô tải?"
+    "Loại dải phân cách": "Có dải phân cách cứng, vạch sơn hay để trống?",
+    "Lề đường bên phải": "Chiều rộng lề đường và vật thể cố định bên lề",
+    "Điểm giao cắt": "Tần suất các điểm giao cắt, lối ra vào nhà dân",
+    "Chất lượng mặt đường": "Độ gồ ghề và sức kháng trượt",
+    "Vạch kẻ & Biển báo": "Sự hiện diện của vạch kẻ đường và biển báo",
+    "Tiện ích đi bộ": "Sự hiện diện của vỉa hè và vị trí sang đường",
+    "Phân làn xe máy": "Xe máy có làn riêng hay đi hỗn hợp?"
 }
 
-star_options = ["1 ⭐ (Rất rủi ro)", "2 ⭐", "3 ⭐ (Đạt chuẩn)", "4 ⭐", "5 ⭐ (Rất an toàn)"]
+# Danh sách tùy chọn xếp hạng sao
+star_options = ["1 ⭐ (Rất rủi ro)", "2 ⭐", "3 ⭐ (Trung bình)", "4 ⭐", "5 ⭐ (Rất an toàn)"]
 
 with st.form("survey_form"):
     # Thông tin người tham gia
@@ -36,7 +37,6 @@ with st.form("survey_form"):
     # Hiển thị 3 đoạn đường nghiên cứu
     col1, col2, col3 = st.columns(3)
 
-    # Hàm xử lý nhập liệu cho từng đoạn đường để code gọn hơn
     def render_survey_column(header, key_prefix):
         st.header(header)
         ratings = {}
@@ -50,11 +50,12 @@ with st.form("survey_form"):
             )
         
         st.markdown("### 🎯 XẾP HẠNG SAO iRAP")
+        # SỬA LỖI TẠI ĐÂY: value phải nằm trong star_options y hệt
         stars = st.select_slider(
             "Mức độ an toàn tổng thể cho đoạn tuyến:", 
             options=star_options, 
             key=f"{key_prefix}_stars", 
-            value="3 ⭐ (Trung bình)"
+            value="3 ⭐ (Trung bình)" 
         )
         comment = st.text_area(f"Ghi chú hiện trường ({header}):", key=f"{key_prefix}_msg")
         return stars
