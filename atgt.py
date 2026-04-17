@@ -5,14 +5,17 @@ import pandas as pd
 st.set_page_config(page_title="Khảo sát iRAP - UTC", layout="wide")
 
 # --- PHẦN HIỂN THỊ LOGO VÀ TÊN KHOA ---
-# Sử dụng link logo chuẩn của UTC
-logo_url = "https://utc.edu.vn/logo.png" 
+# Sử dụng link ảnh logo được lưu trữ trên nền tảng ổn định hơn
+logo_url = "https://upload.wikimedia.org/wikipedia/vi/8/81/Logo_dh_giaothongvantai.png" 
 
 col_l1, col_l2 = st.columns([1, 6])
 
 with col_l1:
-    # Nếu link trên vẫn lỗi, Streamlit sẽ bỏ qua không hiện dấu X
-    st.image(logo_url, width=100)
+    # Thêm tham số width và xử lý lỗi nếu link ảnh không tải được
+    try:
+        st.image(logo_url, width=100)
+    except:
+        st.write("📌 **UTC**")
 
 with col_l2:
     st.subheader("TRƯỜNG ĐẠI HỌC GIAO THÔNG VẬN TẢI")
@@ -27,7 +30,7 @@ if 'data_store' not in st.session_state:
 st.title("📊 Phiếu Khảo sát Đánh giá An toàn Tuyến đường")
 st.info("💡 Đồ án nghiên cứu ứng dụng tiêu chuẩn iRAP trong đánh giá an toàn giao thông.")
 
-# --- 10 TIÊU CHÍ ĐÁNH GIÁ (BẢN CHUẨN) ---
+# --- 10 TIÊU CHÍ ĐÁNH GIÁ ---
 criteria = {
     "1. Bề mặt đường": "Đường có bằng phẳng không? Có ổ gà không?",
     "2. Vạch kẻ đường": "Vạch sơn chia làn, vạch đi bộ có rõ nét không?",
@@ -45,7 +48,16 @@ star_options = ["1 ⭐ (Rất rủi ro)", "2 ⭐", "3 ⭐ (Trung bình)", "4 ⭐
 
 # Form nhập liệu
 with st.form("survey_form"):
-    user_name = st.text_input("Họ tên người khảo sát:", placeholder="Nhập tên của bạn...")
+    # Bổ sung mục đối tượng khảo sát
+    col_u1, col_u2 = st.columns(2)
+    with col_u1:
+        user_name = st.text_input("Họ tên người khảo sát:", placeholder="Nhập tên của bạn...")
+    with col_u2:
+        user_type = st.radio(
+            "Bạn tham gia giao thông chủ yếu bằng:",
+            ["Người đi bộ", "Xe máy", "Ô tô"],
+            horizontal=True
+        )
     
     st.write("---")
     col1, col2, col3 = st.columns(3)
@@ -70,12 +82,13 @@ with st.form("survey_form"):
 if submitted:
     st.session_state.data_store.append({
         "Người đánh giá": user_name,
+        "Đối tượng": user_type,
         "Hầm Kim Liên": s_kl,
         "Đường Giải Phóng": s_gp,
         "QL 1A cũ": s_ql
     })
     st.balloons()
-    st.success("Cảm ơn bạn! Đã ghi lại kết quả khảo sát.")
+    st.success(f"Cảm ơn {user_name}! Đã ghi lại kết quả khảo sát.")
 
 # --- PHẦN TỔNG HỢP DỮ LIỆU ---
 st.write("---")
@@ -83,10 +96,10 @@ show_admin = st.checkbox("🔍 Hiển thị bảng tổng hợp dữ liệu (Dà
 if show_admin:
     if st.session_state.data_store:
         df = pd.DataFrame(st.session_state.data_store)
+        st.subheader("📋 Bảng thống kê kết quả")
         st.dataframe(df, use_container_width=True)
         
-        # Nút tải file Excel
         csv = df.to_csv(index=False).encode('utf-8-sig')
-        st.download_button("📥 Tải kết quả về file Excel (.csv)", data=csv, file_name="tong_hop_khao_sat_irap.csv", mime="text/csv")
+        st.download_button("📥 Tải về file Excel (.csv)", data=csv, file_name="tong_hop_khao_sat_irap.csv", mime="text/csv")
     else:
         st.warning("Chưa có dữ liệu nào được gửi.")
