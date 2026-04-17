@@ -2,85 +2,84 @@ import streamlit as st
 import pandas as pd
 
 # Cấu hình trang
-st.set_page_config(page_title="Khảo sát An toàn Giao thông", layout="wide")
+st.set_page_config(page_title="Khảo sát iRAP - UTC", layout="wide")
 
-# Tiêu đề ứng dụng
-st.title("📊 Khảo sát Ý kiến về An toàn Giao thông Đường bộ")
+st.title("📊 Khảo sát Đánh giá An toàn Giao thông theo Tiêu chuẩn iRAP")
 st.markdown("""
-Hãy dành ít phút để đánh giá mức độ an toàn của các đoạn đường. 
-Dựa trên cảm nhận của bạn, hãy cho biết mức độ 'Sao' an toàn (5 sao là cao nhất).
+Hệ thống tiêu chí này được xây dựng dựa trên **Sổ tay kỹ thuật iRAP**. 
+Vui lòng đánh giá chi tiết các thuộc tính đường để tính toán điểm xếp hạng sao (SRS).
 """)
 
-# Tiêu chí đánh giá chi tiết
+# --- DANH SÁCH TIÊU CHÍ CHI TIẾT THEO CHUẨN IRAP ---
 criteria = {
-    "Chất lượng mặt đường": "Đường bằng phẳng, không ổ gà, không trơn trượt?",
-    "Hệ thống chiếu sáng": "Đèn đường đủ sáng vào ban đêm/trong hầm?",
-    "Vạch kẻ & Biển báo": "Vạch chỉ dẫn, biển báo rõ ràng, dễ quan sát?",
-    "Dải phân cách": "Mức độ an toàn khi phân chia các làn xe?",
-    "Lối đi bộ/Xe đạp": "Vỉa hè, vạch sang đường thuận tiện và an toàn?",
+    "Loại dải phân cách": "Có dải phân cách cứng, vạch sơn hay để trống? (Phòng va chạm đối đầu)",
+    "Lề đường bên phải": "Chiều rộng lề đường và vật thể cố định bên lề (Cột điện, cây cây...)",
+    "Điểm giao cắt": "Tần suất các điểm giao cắt, lối ra vào nhà dân, đường nhánh?",
+    "Chất lượng mặt đường": "Độ gồ ghề và sức kháng trượt (Ảnh hưởng đến quãng đường phanh)",
+    "Vạch kẻ & Biển báo": "Sự hiện diện của vạch tim đường, vạch lề đường và biển báo tốc độ",
+    "Tiện ích đi bộ": "Sự hiện diện của vỉa hè và các vị trí sang đường an toàn",
+    "Phân làn xe máy": "Xe máy có làn riêng hay đi hỗn hợp với ô tô tải?"
 }
 
-# Tùy chọn xếp hạng sao
-star_options = ["1 ⭐ (Rất nguy hiểm)", "2 ⭐", "3 ⭐ (Trung bình)", "4 ⭐", "5 ⭐ (Rất an toàn)"]
+star_options = ["1 ⭐ (Rất rủi ro)", "2 ⭐", "3 ⭐ (Đạt chuẩn)", "4 ⭐", "5 ⭐ (Rất an toàn)"]
 
-# Form khảo sát chính
 with st.form("survey_form"):
-    # Thông tin người tham gia (Tùy chọn)
-    with st.expander("Thông tin người tham gia (Tùy chọn)"):
-        user_name = st.text_input("Họ và tên:")
-        vehicle = st.selectbox("Phương tiện bạn thường đi qua đây:", ["Xe máy", "Ô tô", "Xe đạp", "Đi bộ"])
+    # Thông tin người tham gia
+    with st.expander("👤 Thông tin định danh người khảo sát"):
+        col_u1, col_u2 = st.columns(2)
+        with col_u1:
+            user_name = st.text_input("Họ và tên người thực hiện:")
+        with col_u2:
+            vehicle = st.selectbox("Đối tượng đánh giá chính:", ["Người lái ô tô", "Người đi xe máy", "Người đi bộ"])
 
     st.write("---")
+    # Hiển thị 3 đoạn đường nghiên cứu
     col1, col2, col3 = st.columns(3)
 
-    # Đoạn 1: Hầm Kim Liên
+    # Hàm xử lý nhập liệu cho từng đoạn đường để code gọn hơn
+    def render_survey_column(header, key_prefix):
+        st.header(header)
+        ratings = {}
+        for c, desc in criteria.items():
+            st.write(f"**{c}**")
+            ratings[c] = st.select_slider(
+                desc, 
+                options=["Kém", "Trung bình", "Tốt"], 
+                key=f"{key_prefix}_{c}", 
+                value="Trung bình"
+            )
+        
+        st.markdown("### 🎯 XẾP HẠNG SAO iRAP")
+        stars = st.select_slider(
+            "Mức độ an toàn tổng thể cho đoạn tuyến:", 
+            options=star_options, 
+            key=f"{key_prefix}_stars", 
+            value="3 ⭐ (Trung bình)"
+        )
+        comment = st.text_area(f"Ghi chú hiện trường ({header}):", key=f"{key_prefix}_msg")
+        return stars
+
     with col1:
-        st.header("1. Hầm Kim Liên")
-        rating_kl = {}
-        for c, desc in criteria.items():
-            rating_kl[c] = st.select_slider(f"**{c}**", options=["Kém", "TB", "Tốt"], key=f"kl_{c}")
-        
-        st.subheader("🎯 CHỐT: XẾP HẠNG SAO")
-        stars_kl = st.select_slider("Mức độ an toàn tổng thể:", options=star_options, key="stars_kl", value="3 ⭐ (Trung bình)")
-        comment_kl = st.text_area("Góp ý thêm cho Hầm Kim Liên:", key="comment_kl")
+        stars_kl = render_survey_column("1. Hầm Kim Liên", "kl")
 
-    # Đoạn 2: Giải Phóng (Giáp Bát - Vọng)
     with col2:
-        st.header("2. Đường Giải Phóng")
-        rating_gp = {}
-        for c, desc in criteria.items():
-            rating_gp[c] = st.select_slider(f"**{c}**", options=["Kém", "TB", "Tốt"], key=f"gp_{c}")
-        
-        st.subheader("🎯 CHỐT: XẾP HẠNG SAO")
-        stars_gp = st.select_slider("Mức độ an toàn tổng thể:", options=star_options, key="stars_gp", value="3 ⭐ (Trung bình)")
-        comment_gp = st.text_area("Góp ý thêm cho đường Giải Phóng:", key="comment_gp")
+        stars_gp = render_survey_column("2. Đường Giải Phóng", "gp")
 
-    # Đoạn 3: Quốc lộ 1A cũ
     with col3:
-        st.header("3. Quốc lộ 1A cũ")
-        rating_ql = {}
-        for c, desc in criteria.items():
-            rating_ql[c] = st.select_slider(f"**{c}**", options=["Kém", "TB", "Tốt"], key=f"ql_{c}")
-        
-        st.subheader("🎯 CHỐT: XẾP HẠNG SAO")
-        stars_ql = st.select_slider("Mức độ an toàn tổng thể:", options=star_options, key="stars_ql", value="3 ⭐ (Trung bình)")
-        comment_ql = st.text_area("Góp ý thêm cho QL 1A cũ:", key="comment_ql")
+        stars_ql = render_survey_column("3. Quốc lộ 1A cũ", "ql")
 
-    # Nút gửi
-    submitted = st.form_submit_button("Gửi đánh giá của bạn")
+    submitted = st.form_submit_button("LƯU DỮ LIỆU KHẢO SÁT")
 
-# Xử lý kết quả
 if submitted:
-    st.success("Dữ liệu của bạn đã được ghi nhận thành công!")
+    st.success("Dữ liệu đã được ghi nhận vào hệ thống!")
     
-    # Hiển thị bảng tổng hợp kết quả sao
-    st.subheader("Kết quả xếp hạng sao của bạn")
-    res_data = {
-        "Đoạn đường": ["Hầm Kim Liên", "Đường Giải Phóng", "Quốc lộ 1A cũ"],
-        "Xếp hạng": [stars_kl, stars_gp, stars_ql]
-    }
-    st.table(pd.DataFrame(res_data))
+    # Hiển thị bảng tổng hợp
+    st.subheader("Bảng tóm tắt kết quả xếp hạng")
+    summary = pd.DataFrame({
+        "Đoạn tuyến": ["Hầm Kim Liên", "Đường Giải Phóng", "QL 1A cũ"],
+        "Xếp hạng sao iRAP": [stars_kl, stars_gp, stars_ql]
+    })
+    st.table(summary)
 
-    # LỜI CHÚC CUỐI APP
     st.markdown("---")
-    st.info("🙏 **Cảm ơn bạn đã đóng góp trải nghiệm, chúc bạn một ngày may mắn và luôn an toàn khi tham gia giao thông!**")
+    st.info("🙏 **Cảm ơn bạn đã đóng góp trải nghiệm. Chúc bạn một ngày may mắn và an toàn khi tham gia giao thông!**")
