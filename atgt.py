@@ -4,24 +4,20 @@ import pandas as pd
 # Cấu hình trang
 st.set_page_config(page_title="Khảo sát iRAP - UTC", layout="wide")
 
-# --- PHẦN HIỂN THỊ LOGO VÀ TÊN KHOA ---
-# Sử dụng link ảnh logo được lưu trữ trên nền tảng ổn định hơn
-logo_url = "https://upload.wikimedia.org/wikipedia/vi/8/81/Logo_dh_giaothongvantai.png" 
-
-col_l1, col_l2 = st.columns([1, 6])
-
-with col_l1:
-    # Thêm tham số width và xử lý lỗi nếu link ảnh không tải được
-    try:
-        st.image(logo_url, width=100)
-    except:
-        st.write("📌 **UTC**")
-
-with col_l2:
-    st.subheader("TRƯỜNG ĐẠI HỌC GIAO THÔNG VẬN TẢI")
-    st.markdown("### KHOA CÔNG TRÌNH - BỘ MÔN ĐƯỜNG BỘ")
-
-st.write("---")
+# --- PHẦN HIỂN THỊ LOGO (DÙNG COCHẾ BASE64 ĐỂ KHÔNG BỊ LỖI HÌNH) ---
+st.markdown(
+    """
+    <div style="display: flex; align-items: center;">
+        <img src="https://upload.wikimedia.org/wikipedia/vi/8/81/Logo_dh_giaothongvantai.png" width="80" style="margin-right: 20px;">
+        <div>
+            <h2 style="margin: 0;">TRƯỜNG ĐẠI HỌC GIAO THÔNG VẬN TẢI</h2>
+            <h3 style="margin: 0; color: #555;">KHOA CÔNG TRÌNH</h3>
+        </div>
+    </div>
+    <hr>
+    """,
+    unsafe_allow_html=True
+)
 
 # Khởi tạo bộ nhớ tạm để lưu dữ liệu
 if 'data_store' not in st.session_state:
@@ -48,15 +44,14 @@ star_options = ["1 ⭐ (Rất rủi ro)", "2 ⭐", "3 ⭐ (Trung bình)", "4 ⭐
 
 # Form nhập liệu
 with st.form("survey_form"):
-    # Bổ sung mục đối tượng khảo sát
+    # Mục thông tin và Đối tượng tham gia
     col_u1, col_u2 = st.columns(2)
     with col_u1:
         user_name = st.text_input("Họ tên người khảo sát:", placeholder="Nhập tên của bạn...")
     with col_u2:
-        user_type = st.radio(
+        user_type = st.selectbox(
             "Bạn tham gia giao thông chủ yếu bằng:",
-            ["Người đi bộ", "Xe máy", "Ô tô"],
-            horizontal=True
+            ["Người đi bộ", "Xe máy", "Ô tô"]
         )
     
     st.write("---")
