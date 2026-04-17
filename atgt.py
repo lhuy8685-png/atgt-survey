@@ -2,36 +2,38 @@ import streamlit as st
 import pandas as pd
 
 # Cấu hình trang
-st.set_page_config(page_title="Khảo sát iRAP - UTC", layout="wide")
+st.set_page_config(page_title="Khảo sát An toàn Giao thông - UTC", layout="wide")
 
-st.title("📊 Khảo sát Đánh giá An toàn Giao thông theo Tiêu chuẩn iRAP")
+st.title("📊 Phiếu Khảo sát Đánh giá An toàn Tuyến đường")
 st.markdown("""
-Hệ thống tiêu chí này được xây dựng dựa trên **Sổ tay kỹ thuật iRAP**. 
-Vui lòng đánh giá chi tiết các thuộc tính đường để tính toán điểm xếp hạng sao (SRS).
+Chào bạn! Ý kiến của bạn sẽ giúp chúng tôi đánh giá mức độ an toàn của các tuyến đường trọng điểm tại Hà Nội.
+*Vui lòng chọn mức độ từ **Kém** đến **Tốt** cho các mục dưới đây.*
 """)
 
-# --- DANH SÁCH TIÊU CHÍ CHI TIẾT THEO CHUẨN IRAP ---
+# --- 10 TIÊU CHÍ ĐÁNH GIÁ CHI TIẾT & DỄ HIỂU ---
 criteria = {
-    "Loại dải phân cách": "Có dải phân cách cứng, vạch sơn hay để trống?",
-    "Lề đường bên phải": "Chiều rộng lề đường và vật thể cố định bên lề",
-    "Điểm giao cắt": "Tần suất các điểm giao cắt, lối ra vào nhà dân",
-    "Chất lượng mặt đường": "Độ gồ ghề và sức kháng trượt",
-    "Vạch kẻ & Biển báo": "Sự hiện diện của vạch kẻ đường và biển báo",
-    "Tiện ích đi bộ": "Sự hiện diện của vỉa hè và vị trí sang đường",
-    "Phân làn xe máy": "Xe máy có làn riêng hay đi hỗn hợp?"
+    "1. Bề mặt đường": "Đường có bằng phẳng không? Có ổ gà hay bị trơn trượt không?",
+    "2. Vạch kẻ đường": "Vạch sơn chia làn, vạch đi bộ có rõ nét, dễ nhìn không?",
+    "3. Biển báo giao thông": "Biển báo tốc độ, biển cấm, chỉ dẫn có đặt đúng chỗ và dễ thấy không?",
+    "4. Đèn chiếu sáng": "Ban đêm đèn đường có đủ sáng để nhìn rõ chướng ngại vật không?",
+    "5. Dải phân cách": "Ngăn cách giữa hai chiều xe chạy có chắc chắn và an toàn không?",
+    "6. Lối đi bộ & Vỉa hè": "Vỉa hè có rộng rãi, không bị lấn chiếm, có lối sang đường an toàn không?",
+    "7. Phân làn xe máy": "Xe máy có làn riêng an toàn hay phải đi chung với xe tải, xe buýt?",
+    "8. Điểm giao cắt (Ngõ/Ngã ba)": "Các lối ra vào ngõ nhỏ có tầm nhìn thoáng hay bị che khuất rủi ro?",
+    "9. Thoát nước": "Khi trời mưa đường có bị ngập nước hay đọng nước gây nguy hiểm không?",
+    "10. Cảm giác an toàn": "Tổng thể bạn cảm thấy yên tâm hay lo sợ khi đi qua đoạn đường này?"
 }
 
-# Danh sách tùy chọn xếp hạng sao
 star_options = ["1 ⭐ (Rất rủi ro)", "2 ⭐", "3 ⭐ (Trung bình)", "4 ⭐", "5 ⭐ (Rất an toàn)"]
 
 with st.form("survey_form"):
     # Thông tin người tham gia
-    with st.expander("👤 Thông tin định danh người khảo sát"):
+    with st.expander("👤 Thông tin người khảo sát (Không bắt buộc)"):
         col_u1, col_u2 = st.columns(2)
         with col_u1:
-            user_name = st.text_input("Họ và tên người thực hiện:")
+            user_name = st.text_input("Tên của bạn:")
         with col_u2:
-            vehicle = st.selectbox("Đối tượng đánh giá chính:", ["Người lái ô tô", "Người đi xe máy", "Người đi bộ"])
+            vehicle = st.selectbox("Bạn thường đi qua đây bằng:", ["Xe máy", "Ô tô", "Xe đạp / Đi bộ"])
 
     st.write("---")
     # Hiển thị 3 đoạn đường nghiên cứu
@@ -39,48 +41,48 @@ with st.form("survey_form"):
 
     def render_survey_column(header, key_prefix):
         st.header(header)
-        ratings = {}
-        for c, desc in criteria.items():
-            st.write(f"**{c}**")
-            ratings[c] = st.select_slider(
+        for name, desc in criteria.items():
+            st.write(f"**{name}**")
+            st.select_slider(
                 desc, 
-                options=["Kém", "Trung bình", "Tốt"], 
-                key=f"{key_prefix}_{c}", 
-                value="Trung bình"
+                options=["Kém", "Tạm được", "Tốt"], 
+                key=f"{key_prefix}_{name}", 
+                value="Tạm được"
             )
         
-        st.markdown("### 🎯 XẾP HẠNG SAO iRAP")
-        # SỬA LỖI TẠI ĐÂY: value phải nằm trong star_options y hệt
+        st.write("---")
+        st.markdown("### 🎯 ĐÁNH GIÁ CHUNG")
         stars = st.select_slider(
-            "Mức độ an toàn tổng thể cho đoạn tuyến:", 
+            f"Mức độ an toàn tổng thể cho {header}:", 
             options=star_options, 
             key=f"{key_prefix}_stars", 
             value="3 ⭐ (Trung bình)" 
         )
-        comment = st.text_area(f"Ghi chú hiện trường ({header}):", key=f"{key_prefix}_msg")
+        comment = st.text_area(f"Góp ý thêm cho {header}:", key=f"{key_prefix}_msg", placeholder="Ví dụ: Cần thêm đèn vàng, vỉa hè quá hẹp...")
         return stars
 
     with col1:
-        stars_kl = render_survey_column("1. Hầm Kim Liên", "kl")
+        stars_kl = render_survey_column("Hầm Kim Liên", "kl")
 
     with col2:
-        stars_gp = render_survey_column("2. Đường Giải Phóng", "gp")
+        stars_gp = render_survey_column("Đường Giải Phóng", "gp")
 
     with col3:
-        stars_ql = render_survey_column("3. Quốc lộ 1A cũ", "ql")
+        stars_ql = render_survey_column("Quốc lộ 1A cũ", "ql")
 
-    submitted = st.form_submit_button("LƯU DỮ LIỆU KHẢO SÁT")
+    # Nút gửi cuối trang
+    st.write("---")
+    submitted = st.form_submit_button("GỬI ĐÁNH GIÁ CỦA BẠN")
 
 if submitted:
-    st.success("Dữ liệu đã được ghi nhận vào hệ thống!")
+    st.balloons()
+    st.success("Cảm ơn Huy! Dữ liệu khảo sát đã được ghi nhận thành công.")
     
-    # Hiển thị bảng tổng hợp
-    st.subheader("Bảng tóm tắt kết quả xếp hạng")
+    # Bảng kết quả nhanh
+    st.subheader("Tóm tắt đánh giá của bạn")
     summary = pd.DataFrame({
-        "Đoạn tuyến": ["Hầm Kim Liên", "Đường Giải Phóng", "QL 1A cũ"],
-        "Xếp hạng sao iRAP": [stars_kl, stars_gp, stars_ql]
+        "Tuyến đường": ["Hầm Kim Liên", "Đường Giải Phóng", "QL 1A cũ"],
+        "Xếp hạng": [stars_kl, stars_gp, stars_ql]
     })
     st.table(summary)
-
-    st.markdown("---")
-    st.info("🙏 **Cảm ơn bạn đã đóng góp trải nghiệm. Chúc bạn một ngày may mắn và an toàn khi tham gia giao thông!**")
+    st.info("💡 Kết quả này sẽ được sử dụng để phân tích an toàn giao thông cho đồ án kỹ thuật.")
