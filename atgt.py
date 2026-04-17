@@ -1,10 +1,11 @@
 import streamlit as st
 import pandas as pd
+import time
 
 # Cấu hình trang
 st.set_page_config(page_title="Khảo sát iRAP - UTC", layout="wide")
 
-# --- PHẦN HIỂN THỊ LOGO (DÙNG COCHẾ BASE64 ĐỂ KHÔNG BỊ LỖI HÌNH) ---
+# --- PHẦN HIỂN THỊ LOGO (DÙNG HTML ĐỂ CỐ ĐỊNH) ---
 st.markdown(
     """
     <div style="display: flex; align-items: center;">
@@ -22,79 +23,90 @@ st.markdown(
 # Khởi tạo bộ nhớ tạm để lưu dữ liệu
 if 'data_store' not in st.session_state:
     st.session_state.data_store = []
+if 'submitted' not in st.session_state:
+    st.session_state.submitted = False
 
-st.title("📊 Phiếu Khảo sát Đánh giá An toàn Tuyến đường")
-st.info("💡 Đồ án nghiên cứu ứng dụng tiêu chuẩn iRAP trong đánh giá an toàn giao thông.")
+# --- HÀM XỬ LÝ KHI GỬI ĐÁNH GIÁ ---
+def submit_survey():
+    st.session_state.submitted = True
 
-# --- 10 TIÊU CHÍ ĐÁNH GIÁ ---
-criteria = {
-    "1. Bề mặt đường": "Đường có bằng phẳng không? Có ổ gà không?",
-    "2. Vạch kẻ đường": "Vạch sơn chia làn, vạch đi bộ có rõ nét không?",
-    "3. Biển báo": "Biển báo có đặt đúng chỗ và dễ thấy không?",
-    "4. Đèn chiếu sáng": "Ban đêm đèn đường có đủ sáng không?",
-    "5. Dải phân cách": "Ngăn cách giữa hai chiều có an toàn không?",
-    "6. Vỉa hè": "Vỉa hè có rộng, không bị lấn chiếm không?",
-    "7. Xe máy": "Xe máy có làn riêng hay đi hỗn hợp nguy hiểm?",
-    "8. Điểm giao cắt": "Các lối ra vào ngõ có tầm nhìn thoáng không?",
-    "9. Thoát nước": "Trời mưa đường có bị ngập úng không?",
-    "10. Cảm giác an toàn": "Bạn có yên tâm khi đi qua đoạn đường này không?"
-}
+# --- GIAO DIỆN CHÍNH ---
+placeholder = st.empty()
 
-star_options = ["1 ⭐ (Rất rủi ro)", "2 ⭐", "3 ⭐ (Trung bình)", "4 ⭐", "5 ⭐ (Rất an toàn)"]
-
-# Form nhập liệu
-with st.form("survey_form"):
-    # Mục thông tin và Đối tượng tham gia
-    col_u1, col_u2 = st.columns(2)
-    with col_u1:
-        user_name = st.text_input("Họ tên người khảo sát:", placeholder="Nhập tên của bạn...")
-    with col_u2:
-        user_type = st.selectbox(
-            "Bạn tham gia giao thông chủ yếu bằng:",
-            ["Người đi bộ", "Xe máy", "Ô tô"]
-        )
-    
-    st.write("---")
-    col1, col2, col3 = st.columns(3)
-
-    def render_survey(header, key_p):
-        st.markdown(f"### {header}")
-        for name, desc in criteria.items():
-            st.write(f"**{name}**")
-            st.select_slider(desc, options=["Kém", "Tạm được", "Tốt"], key=f"{key_p}_{name}", value="Tạm được")
+if not st.session_state.submitted:
+    with placeholder.container():
+        st.title("📊 Phiếu Khảo sát Đánh giá An toàn Tuyến đường")
+        st.info("👋 Chào bạn! Cảm ơn bạn đã dành thời gian tham gia khảo sát đóng góp cho đồ án nghiên cứu iRAP của chúng tôi.")
         
-        st.write("---")
-        stars = st.select_slider(f"Xếp hạng sao cho {header}:", options=star_options, key=f"{key_p}_s", value="3 ⭐ (Trung bình)")
-        return stars
+        # Form nhập liệu
+        with st.form("survey_form"):
+            col_u1, col_u2, col_u3 = st.columns(3)
+            with col_u1:
+                user_name = st.text_input("Họ tên người khảo sát:", placeholder="Nhập tên...")
+            with col_u2:
+                user_age = st.number_input("Độ tuổi của bạn:", min_value=5, max_value=100, value=20)
+            with col_u3:
+                user_type = st.selectbox("Bạn tham gia giao thông bằng:", ["Người đi bộ", "Xe máy", "Ô tô"])
+            
+            st.write("---")
+            st.subheader("📝 Đánh giá các tiêu chí kỹ thuật")
+            
+            # Danh sách tiêu chí
+            criteria = ["Bề mặt đường", "Vạch kẻ & Biển báo", "Chiếu sáng", "Dải phân cách", "Vỉa hè/Lề đường"]
+            star_options = ["1 ⭐", "2 ⭐", "3 ⭐", "4 ⭐", "5 ⭐"]
+            
+            col1, col2, col3 = st.columns(3)
+            
+            def render_section(title, key_p):
+                st.markdown(f"#### 📍 {title}")
+                res = {}
+                for c in criteria:
+                    res[c] = st.select_slider(f"{c}:", options=["Kém", "Tạm được", "Tốt"], key=f"{key_p}_{c}", value="Tạm được")
+                st.write("---")
+                stars = st.select_slider(f"Xếp hạng tổng thể {title}:", options=star_options, key=f"{key_p}_s", value="3 ⭐")
+                return stars, res
 
-    with col1: s_kl = render_survey("Hầm Kim Liên", "kl")
-    with col2: s_gp = render_survey("Đường Giải Phóng", "gp")
-    with col3: s_ql = render_survey("QL 1A cũ", "ql")
+            with col1: s_kl, r_kl = render_section("Hầm Kim Liên", "kl")
+            with col2: s_gp, r_gp = render_section("Đường Giải Phóng", "gp")
+            with col3: s_ql, r_ql = render_section("QL 1A cũ", "ql")
 
-    st.write("---")
-    submitted = st.form_submit_button("GỬI ĐÁNH GIÁ CỦA BẠN")
+            submitted = st.form_submit_button("GỬI ĐÁNH GIÁ NGAY", on_click=submit_survey)
+            
+            if submitted:
+                # Lưu dữ liệu vào session_state
+                st.session_state.data_store.append({
+                    "Họ tên": user_name,
+                    "Tuổi": user_age,
+                    "Phương tiện": user_type,
+                    "Hầm Kim Liên": s_kl,
+                    "Đường Giải Phóng": s_gp,
+                    "QL 1A cũ": s_ql
+                })
 
-if submitted:
-    st.session_state.data_store.append({
-        "Người đánh giá": user_name,
-        "Đối tượng": user_type,
-        "Hầm Kim Liên": s_kl,
-        "Đường Giải Phóng": s_gp,
-        "QL 1A cũ": s_ql
-    })
-    st.balloons()
-    st.success(f"Cảm ơn {user_name}! Đã ghi lại kết quả khảo sát.")
+else:
+    # --- MÀN HÌNH CẢM ƠN (CHUYỂN ĐỘNG) ---
+    with placeholder.container():
+        st.balloons()
+        st.success("🎉 Gửi thành công!")
+        st.markdown(f"""
+            <div style="text-align: center; padding: 50px;">
+                <h1>🙏 Chân thành cảm ơn bạn!</h1>
+                <p style="font-size: 20px;">Những ý kiến đóng góp quý báu của bạn sẽ giúp đồ án iRAP của chúng tôi hoàn thiện hơn.</p>
+                <p>Chúc bạn có một ngày tham gia giao thông an toàn!</p>
+            </div>
+        """, unsafe_allow_html=True)
+        
+        if st.button("Thực hiện đánh giá mới"):
+            st.session_state.submitted = False
+            st.rerun()
 
-# --- PHẦN TỔNG HỢP DỮ LIỆU ---
+# --- PHẦN QUẢN TRỊ DỮ LIỆU (ẨN Ở DƯỚI) ---
 st.write("---")
-show_admin = st.checkbox("🔍 Hiển thị bảng tổng hợp dữ liệu (Dành cho báo cáo)")
-if show_admin:
+with st.expander("🔍 Dành cho người quản trị: Xem tổng hợp kết quả"):
     if st.session_state.data_store:
         df = pd.DataFrame(st.session_state.data_store)
-        st.subheader("📋 Bảng thống kê kết quả")
         st.dataframe(df, use_container_width=True)
-        
         csv = df.to_csv(index=False).encode('utf-8-sig')
-        st.download_button("📥 Tải về file Excel (.csv)", data=csv, file_name="tong_hop_khao_sat_irap.csv", mime="text/csv")
+        st.download_button("📥 Tải về file Excel (.csv)", data=csv, file_name="du_lieu_irap_utc.csv")
     else:
-        st.warning("Chưa có dữ liệu nào được gửi.")
+        st.info("Chưa có dữ liệu đánh giá nào được lưu.")
